@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import lat.vmdev.inventory.domain.InsufficientStockException;
 import lat.vmdev.inventory.domain.StockRuleViolationException;
+import lat.vmdev.inventory.observability.InventoryMetrics;
 import lat.vmdev.inventory.reservation.ReservationNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +19,15 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    private final InventoryMetrics metrics;
+
+    public GlobalExceptionHandler(InventoryMetrics metrics) {
+        this.metrics = metrics;
+    }
+
     @ExceptionHandler(InsufficientStockException.class)
     ResponseEntity<ApiError> insufficientStock(InsufficientStockException e) {
+        metrics.reservationRejected("insufficient_stock");
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiError.of(
                 "INSUFFICIENT_STOCK",
                 e.getMessage(),
@@ -28,6 +36,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ContendedStockException.class)
     ResponseEntity<ApiError> contended(ContendedStockException e) {
+        metrics.reservationRejected("contended");
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .header("Retry-After", "1")
                 .body(ApiError.of("STOCK_CONTENDED", e.getMessage()));
@@ -47,6 +56,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(StockRuleViolationException.class)
     ResponseEntity<ApiError> ruleViolation(StockRuleViolationException e) {
+        if (e.getMessage() != null && e.getMessage().contains("invariant violated")) {
+            log.error("STOCK INVARIANT BREACH", e);
+            metrics.oversellDetected();
+        }
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(ApiError.of("STOCK_RULE_VIOLATION", e.getMessage()));
     }
@@ -61,7 +74,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    ResponseEntity<ApiError> unexpected(Exception e) {
+    ResponseEntity<ApiError> unexpected(Exception e) throws Exception {
+        // Let Spring handle its own web exceptions (404s, unsupported media type, ...).
+        if (e instanceof org.springframework.web.ErrorResponse) {
+            throw e;
+        }
         log.error("unhandled exception", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiError.of("INTERNAL_ERROR", "the request could not be completed"));

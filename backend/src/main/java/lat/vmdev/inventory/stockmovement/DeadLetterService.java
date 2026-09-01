@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import lat.vmdev.inventory.config.InventoryProperties;
+import lat.vmdev.inventory.observability.InventoryMetrics;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,18 +25,21 @@ public class DeadLetterService {
     private final ObjectMapper json;
     private final Clock clock;
     private final InventoryProperties props;
+    private final InventoryMetrics metrics;
 
     public DeadLetterService(
             DeadLetterRepository repository,
             KafkaTemplate<String, Object> kafka,
             ObjectMapper json,
             Clock clock,
-            InventoryProperties props) {
+            InventoryProperties props,
+            InventoryMetrics metrics) {
         this.repository = repository;
         this.kafka = kafka;
         this.json = json;
         this.clock = clock;
         this.props = props;
+        this.metrics = metrics;
     }
 
     private static final int MAX_DETAIL = 4_000;
@@ -68,6 +72,7 @@ public class DeadLetterService {
                 exceptionType,
                 detail.isBlank() ? null : detail,
                 clock.instant()));
+        metrics.movementDeadLettered();
         log.error("dead-lettered {}#{}@{} key={} cause={} {}",
                 record.topic(), record.partition(), record.offset(), record.key(),
                 exceptionType, exceptionMessage);

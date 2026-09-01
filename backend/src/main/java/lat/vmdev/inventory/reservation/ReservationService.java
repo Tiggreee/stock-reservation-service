@@ -13,6 +13,7 @@ import lat.vmdev.inventory.events.ReservationConfirmed;
 import lat.vmdev.inventory.events.ReservationCreated;
 import lat.vmdev.inventory.events.ReservationReleased;
 import lat.vmdev.inventory.events.StockLevelChanged;
+import lat.vmdev.inventory.observability.InventoryMetrics;
 import lat.vmdev.inventory.persistence.ReservationRepository;
 import lat.vmdev.inventory.persistence.StockLedgerRepository;
 import lat.vmdev.inventory.persistence.StockLevelRepository;
@@ -40,6 +41,7 @@ public class ReservationService {
     private final ReservationRepository reservations;
     private final StockLedgerRepository ledger;
     private final ApplicationEventPublisher events;
+    private final InventoryMetrics metrics;
     private final Clock clock;
     private final InventoryProperties props;
 
@@ -49,6 +51,7 @@ public class ReservationService {
             ReservationRepository reservations,
             StockLedgerRepository ledger,
             ApplicationEventPublisher events,
+            InventoryMetrics metrics,
             Clock clock,
             InventoryProperties props) {
         this.tx = tx;
@@ -56,6 +59,7 @@ public class ReservationService {
         this.reservations = reservations;
         this.ledger = ledger;
         this.events = events;
+        this.metrics = metrics;
         this.clock = clock;
         this.props = props;
     }
@@ -95,6 +99,7 @@ public class ReservationService {
         recordMovement(stock, LedgerEntryType.RESERVE, -command.quantity(), reservation.getId().toString(), now);
         reservations.save(reservation);
         events.publishEvent(new ReservationCreated(reservation.getId(), stock.getSku(), command.quantity(), now));
+        metrics.reservationCreated();
         return reservation;
     }
 

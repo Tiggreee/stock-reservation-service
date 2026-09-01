@@ -1,5 +1,7 @@
 package lat.vmdev.inventory.stockmovement;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lat.vmdev.inventory.domain.StockRuleViolationException;
 import lat.vmdev.inventory.inbox.IdempotentInbox;
 import lat.vmdev.inventory.stock.StockService;
@@ -22,17 +24,26 @@ public class StockMovementHandler {
     private final StockService stock;
     private final IdempotentInbox inbox;
     private final PersistenceExceptionClassifier classifier;
+    private final Timer processingTimer;
 
     public StockMovementHandler(
-            StockService stock, IdempotentInbox inbox, PersistenceExceptionClassifier classifier) {
+            StockService stock,
+            IdempotentInbox inbox,
+            PersistenceExceptionClassifier classifier,
+            MeterRegistry meters) {
         this.stock = stock;
         this.inbox = inbox;
         this.classifier = classifier;
+        this.processingTimer = Timer.builder("inventory.stock_movement.processing")
+                .description("time to apply one warehouse movement")
+                .publishPercentileHistogram()
+                .register(meters);
     }
 
     public void handle(StockMovementEvent event) {
         try {
-            inbox.runOnce(event.eventId(), "StockMovementEvent", () -> apply(event));
+            processingTimer.record(() ->
+                    inbox.runOnce(event.eventId(), "StockMovementEvent", () -> apply(event)));
         } catch (StockRuleViolationException | DataIntegrityViolationException permanent) {
             throw new NonRetryableMovementException(
                     "permanent failure applying movement " + event.eventId(), permanent);
