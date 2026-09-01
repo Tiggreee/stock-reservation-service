@@ -17,6 +17,6 @@ public record InventoryProperties(Reservation reservation, Outbox outbox, Kafka 
 
         public record Topics(String stockMovements, String inventoryEvents) {}
 
-        public record Retry(int attempts, Duration initialInterval, double multiplier, Duration maxInterval) {}
+        public record Retry(int attempts, long initialIntervalMs, double multiplier, long maxIntervalMs) {}
     }
 }

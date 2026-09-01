@@ -67,11 +67,26 @@ public class StockService {
         });
     }
 
+    /**
+     * Goods receipt. Opens the SKU if this is the first time the warehouse has
+     * reported it — a receipt is a legitimate first sighting of a product.
+     */
     public StockLevel receive(String sku, int quantity, String correlationId) {
-        return mutate(sku, LedgerEntryType.RECEIPT, correlationId, stock -> {
-            stock.receive(quantity);
-            return quantity;
-        });
+        return OptimisticRetry.execute(
+                props.reservation().optimisticLockMaxRetries(),
+                sku,
+                () -> tx.execute(status -> {
+                    var stock = stockLevels.findBySkuAndLocation(sku, LOCATION)
+                            .orElseGet(() -> stockLevels.save(new StockLevel(sku, LOCATION, 0)));
+                    var now = clock.instant();
+                    stock.receive(quantity);
+                    stockLevels.save(stock);
+                    ledger.save(new StockLedgerEntry(LedgerEntryType.RECEIPT, quantity, stock, correlationId, now));
+                    events.publishEvent(new StockLevelChanged(
+                            sku, LedgerEntryType.RECEIPT, quantity,
+                            stock.getOnHand(), stock.getReserved(), correlationId, now));
+                    return stock;
+                }));
     }
 
     public StockLevel adjust(String sku, int delta, String correlationId) {

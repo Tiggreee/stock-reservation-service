@@ -72,6 +72,6 @@ inventory:
       inventory-events: inventory.events.v1
     retry:
       attempts: 4
-      initial-interval: 10s
+      initial-interval-ms: 10000
       multiplier: 5.0
-      max-interval: 5m
+      max-interval-ms: 300000

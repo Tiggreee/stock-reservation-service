@@ -16,9 +16,9 @@ inventory:
   kafka:
     retry:
       attempts: 3
-      initial-interval: 1s
+      initial-interval-ms: 700
       multiplier: 3.0
-      max-interval: 10s
+      max-interval-ms: 6000
 
 logging:
   level:
