@@ -1,0 +1,38 @@
+# Build output
+build/
+target/
+out/
+bin/
+dist/
+
+# Gradle
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node
+node_modules/
+web/coverage/
+web/playwright-report/
+web/test-results/
+*.local
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
