@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: stock-reservation-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/inventory
+    username: inventory
+    password: inventory
+    hikari:
+      maximum-pool-size: 12
+      minimum-idle: 2
+      connection-timeout: 3000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.jdbc.lob.non_contextual_creation: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: inventory
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "lat.vmdev.inventory"
+        spring.json.value.default.type: lat.vmdev.inventory.stockmovement.StockMovementEvent
+        spring.json.use.type.headers: false
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+    listener:
+      ack-mode: record
+      missing-topics-fatal: false
+
+server:
+  port: 8080
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+inventory:
+  reservation:
+    ttl: PT15M
+    optimistic-lock-max-retries: 3
+  outbox:
+    poll-interval: 1s
+    batch-size: 100
+  kafka:
+    topics:
+      stock-movements: wms.stock-movements.v1
+      inventory-events: inventory.events.v1
+    retry:
+      attempts: 4
+      initial-interval: 10s
+      multiplier: 5.0
+      max-interval: 5m

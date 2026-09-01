@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/inventory
+  kafka:
+    bootstrap-servers: kafka:29092
