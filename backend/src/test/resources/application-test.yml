@@ -1,4 +1,8 @@
 spring:
+  datasource:
+    hikari:
+      connection-timeout: 15000
+      maximum-pool-size: 16
   jpa:
     hibernate:
       ddl-auto: validate
