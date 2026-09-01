@@ -1,0 +1,6 @@
+build/
+.gradle/
+*.iml
+.idea/
+src/test/
+README.md

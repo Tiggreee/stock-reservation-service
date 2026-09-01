@@ -1,0 +1,95 @@
+{
+  "uid": "stock-reservation",
+  "title": "Stock Reservation Service",
+  "tags": ["inventory"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Oversell events (must be 0)",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "steps": [
+            { "color": "green", "value": null },
+            { "color": "red", "value": 1 }
+          ] }
+        }
+      },
+      "targets": [
+        { "expr": "sum(inventory_oversell_total)", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Dead letters pending",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "steps": [
+            { "color": "green", "value": null },
+            { "color": "orange", "value": 1 }
+          ] }
+        }
+      },
+      "targets": [
+        { "expr": "sum(inventory_deadletters_pending)", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Outbox pending",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "sum(inventory_outbox_pending)", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Consumer lag (stock-movements)",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        { "expr": "sum(kafka_consumer_fetch_manager_records_lag)", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Reservations / sec by outcome",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "targets": [
+        { "expr": "sum by (outcome) (rate(inventory_reservations_total[5m]))", "legendFormat": "{{outcome}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Reservation API latency (p50 / p95 / p99)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{uri=\"/api/v1/reservations\"}[5m])))", "legendFormat": "p50", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{uri=\"/api/v1/reservations\"}[5m])))", "legendFormat": "p95", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{uri=\"/api/v1/reservations\"}[5m])))", "legendFormat": "p99", "refId": "C" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Stock-movement processing p99",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(inventory_stock_movement_processing_seconds_bucket[5m])))", "legendFormat": "p99", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Retry-topic & DLT throughput",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "targets": [
+        { "expr": "sum(rate(inventory_stock_movement_dlt_total[5m]))", "legendFormat": "dead-lettered", "refId": "A" },
+        { "expr": "sum(rate(inventory_reservations_total{outcome=\"rejected\",reason=\"contended\"}[5m]))", "legendFormat": "contended", "refId": "B" }
+      ]
+    }
+  ]
+}
