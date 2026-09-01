@@ -36,3 +36,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# msw worker (generated)
+web/public/mockServiceWorker.js
