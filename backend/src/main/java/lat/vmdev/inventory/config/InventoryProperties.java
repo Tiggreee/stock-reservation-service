@@ -11,7 +11,7 @@ public record InventoryProperties(Reservation reservation, Outbox outbox, Kafka 
 
     public record Reservation(Duration ttl, int optimisticLockMaxRetries) {}
 
-    public record Outbox(Duration pollInterval, int batchSize) {}
+    public record Outbox(long pollIntervalMs, int batchSize) {}
 
     public record Kafka(Topics topics, Retry retry) {
 

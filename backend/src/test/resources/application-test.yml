@@ -12,7 +12,7 @@ spring:
 
 inventory:
   outbox:
-    poll-interval: 200ms
+    poll-interval-ms: 250
   kafka:
     retry:
       attempts: 3

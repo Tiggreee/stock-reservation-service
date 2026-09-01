@@ -64,7 +64,7 @@ inventory:
     ttl: PT15M
     optimistic-lock-max-retries: 3
   outbox:
-    poll-interval: 1s
+    poll-interval-ms: 1000
     batch-size: 100
   kafka:
     topics:
