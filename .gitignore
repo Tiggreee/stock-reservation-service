@@ -39,3 +39,4 @@ Thumbs.db
 
 # msw worker (generated)
 web/public/mockServiceWorker.js
+*.tsbuildinfo
