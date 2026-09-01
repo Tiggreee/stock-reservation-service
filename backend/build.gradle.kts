@@ -8,6 +8,10 @@ group = "lat.vmdev"
 version = "0.1.0"
 description = "Event-driven stock reservation service"
 
+// Docker Engine 29 raised the minimum API version; use a Testcontainers build
+// whose bundled docker-java negotiates it correctly.
+extra["testcontainers.version"] = "1.21.4"
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
@@ -32,6 +36,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.springframework.kafka:spring-kafka-test")
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")

@@ -1,0 +1,22 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+
+inventory:
+  outbox:
+    poll-interval: 200ms
+  kafka:
+    retry:
+      attempts: 3
+      initial-interval: 1s
+      multiplier: 3.0
+      max-interval: 10s
+
+logging:
+  level:
+    org.apache.kafka: WARN
+    org.testcontainers: INFO
